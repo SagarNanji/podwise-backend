@@ -25,12 +25,14 @@ app.set("trust proxy", 1);
 
 // ---------- CORS (single middleware) ----------
 const corsOptions: cors.CorsOptions = {
-  origin: process.env.CORS_ORIGIN,  // e.g. https://your-frontend.vercel.app
+  origin: process.env.CORS_ORIGIN,  // e.g. https://podwise-frontend.vercel.app  (no trailing slash)
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 };
 app.use(cors(corsOptions));
+app.options(/^\/.*/, cors(corsOptions));   // <-- add this line (or /^\/api\/.*/ to limit to /api)
+
 
 // ---------- Session (single middleware) ----------
 app.use(
