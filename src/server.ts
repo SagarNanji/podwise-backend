@@ -1,40 +1,50 @@
 import express, { Request, Response } from "express";
 import { configDotenv } from "dotenv";
 import bodyParser from "body-parser";
-import sessionRouter from "./routes/session";
-import chatRouter from "./routes/chat";
-import authRoutes from "./routes/auth";
-import historyRoutes from "./routes/history";
-import contactRoutes from "./routes/Contact";
+import sessionRouter from "../routes/session";
+import chatRouter from "../routes/chat";
+import authRoutes from "../routes/auth";
+import historyRoutes from "../routes/history";
+import contactRoutes from "../routes/Contact";
+import profileRoutes from "../routes/profile";
 import cors from "cors";
 import session from "express-session";
-import { connectToDb } from "./utils/db";
+import { connectToDb } from "../utils/db";
 import path from "path";
-import profileRoutes from "./routes/profile";
 
 configDotenv();
 
 const app = express();
 const IS_PROD = process.env.NODE_ENV === "production";
 
-// If deploying behind a proxy (Render/Railway/Heroku/NGINX), uncomment:
-// app.set("trust proxy", 1);
+// If behind a proxy/CDN (Vercel/NGINX/etc.), keep cookies happy:
+app.set("trust proxy", 1);
 
-// Browsers forbid `*` with credentials; this reflects the request origin instead.
+/* ===================== CORS ===================== */
+/* Allow ALL origins with credentials.
+   NOTE: with credentials, browsers forbid ACAO:*,
+   so reflect the request Origin by returning true. */
 const corsAllWithCreds = cors({
-  origin: (_origin, cb) => cb(null, true), // reflect any Origin
-  credentials: true, // allow cookies/Authorization
+  origin: (_origin, cb) => cb(null, true),
+  credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 });
-app.use(corsAllWithCreds);
-app.options("*", corsAllWithCreds); // handle preflights
 
+// Must go BEFORE session/routers:
+app.use(corsAllWithCreds);
+
+// Express 5: use a RegExp (NOT "*" or "(.*)")
+app.options(/.*/, corsAllWithCreds);
+
+/* ===================== Health ===================== */
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+/* ===================== Parsers ===================== */
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+/* ===================== Session ===================== */
 app.use(
   session({
     name: "sid",
@@ -43,17 +53,16 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      // For local dev (same-site: localhost↔localhost): "lax" is fine.
-      // For cross-site over HTTPS in prod: browsers require sameSite:"none" + secure:true.
+      // local dev: "lax" is fine; cross-site HTTPS prod: "none" + secure:true
       sameSite: IS_PROD ? "none" : "lax",
       secure: IS_PROD,
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
+      maxAge: 1000 * 60 * 60 * 24,
       path: "/",
     },
   })
 );
 
-/* ===================== Logger (simple) ===================== */
+/* ===================== Logger ===================== */
 app.use((req, _res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
