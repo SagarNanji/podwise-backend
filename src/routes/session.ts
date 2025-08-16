@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { SessionController } from "../../controllers/session";
+import { SessionController } from "../controllers/session";
 import multer from "multer";
 
 const upload = multer({ dest: "uploads/" });

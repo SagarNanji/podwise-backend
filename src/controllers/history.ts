@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getDb } from "../src/utils/db";
+import { getDb } from "../utils/db";
 import { ObjectId } from "mongodb";
 import { Session } from "../models/Session";
 import { Chat } from "../models/Chat";

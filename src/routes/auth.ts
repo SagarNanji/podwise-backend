@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { getDb } from "../utils/db";
-import { User } from "../../models/User";
+import { User } from "../models/User";
 
 import { Request } from "express";
 

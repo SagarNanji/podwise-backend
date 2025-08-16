@@ -1,6 +1,6 @@
 import {Mistral} from "@mistralai/mistralai";
 import fs from "fs";
-import {getDb} from "../src/utils/db";
+import {getDb} from "../utils/db";
 import {GridFSBucket, ObjectId} from "mongodb";
 import path from "path";
 

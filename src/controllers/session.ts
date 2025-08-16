@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { splitAudio } from "../services/audio";
-import { getDb } from "../src/utils/db";
+import { getDb } from "../utils/db";
 import { Session } from "../models/Session";
 import { Chat } from "../models/Chat";
 import { ObjectId } from "mongodb";
