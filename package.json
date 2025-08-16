@@ -1,0 +1,40 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsnd --respawn app.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@mistralai/mistralai": "^1.7.5",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "ffmpeg-static": "^5.2.0",
+    "get-audio-duration": "^4.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.18.0",
+    "mongoose": "^8.17.1",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.19.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/express-session": "^1.18.2",
+    "@types/mongodb": "^4.0.6",
+    "@types/multer": "^2.0.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.8.3"
+  }
+}
