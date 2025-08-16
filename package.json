@@ -2,9 +2,12 @@
   "name": "backend",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": { "node": ">=20 <21" },
   "scripts": {
     "dev": "tsnd --respawn src/server.ts",
     "build": "tsc",
+        "postbuild": "echo 'Built files:' && (ls -la dist || true) && (ls -la dist/src || true) && (ls -la build || true)",
+
     "start": "node dist/server.js"
   },
   "keywords": [],

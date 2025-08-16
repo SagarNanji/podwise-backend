@@ -1,116 +1,89 @@
-import express, { Request, Response } from "express";
+// src/server.ts
+import express from "express";
 import { configDotenv } from "dotenv";
 import bodyParser from "body-parser";
-import sessionRouter from "../routes/session";
-import chatRouter from "../routes/chat";
-import authRoutes from "../routes/auth";
-import historyRoutes from "../routes/history";
-import contactRoutes from "../routes/Contact";
-import profileRoutes from "../routes/profile";
 import cors from "cors";
 import session from "express-session";
-import { connectToDb } from "../utils/db";
-import path from "path";
 import MongoStore from "connect-mongo";
+
+import sessionRouter from "./routes/session";
+import chatRouter from "./routes/chat";
+import authRoutes from "./routes/auth";
+import historyRoutes from "./routes/history";
+import contactRoutes from "./routes/Contact";
+import profileRoutes from "./routes/profile";
+import { connectToDb } from "./utils/db";
+import path from "path";
 
 configDotenv();
 
 const app = express();
 const IS_PROD = process.env.NODE_ENV === "production";
 
-// If behind a proxy/CDN (Vercel/NGINX/etc.), keep cookies happy:
+// Behind proxies (Render): trust proxy so secure cookies work
 app.set("trust proxy", 1);
 
-/* ===================== CORS ===================== */
-/* Allow ALL origins with credentials.
-   NOTE: with credentials, browsers forbid ACAO:*,
-   so reflect the request Origin by returning true. */
-const corsAllWithCreds = cors({
-  origin: (_origin, cb) => cb(null, true),
+// ---------- CORS (single middleware) ----------
+const corsOptions: cors.CorsOptions = {
+  origin: process.env.CORS_ORIGIN,  // e.g. https://your-frontend.vercel.app
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-});
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // preflight
 
-// Must go BEFORE session/routers:
-app.use(corsAllWithCreds);
-app.use(cors({
-  origin: process.env.CORS_ORIGIN, // e.g. https://your-frontend.vercel.app
-  credentials: true
-}));
-
-app.use(session({
-  secret: process.env.SESSION_SECRET!,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI! }),
-  cookie: {
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
-  }
-}));
-
-// Express 5: use a RegExp (NOT "*" or "(.*)")
-app.options(/.*/, corsAllWithCreds);
-
-/* ===================== Health ===================== */
-app.get("/health", (_req, res) => res.json({ ok: true }));
-
-/* ===================== Parsers ===================== */
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-/* ===================== Session ===================== */
+// ---------- Session (single middleware) ----------
 app.use(
   session({
     name: "sid",
     secret: process.env.SESSION_SECRET || "keyboard_cat",
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI! }),
     cookie: {
       httpOnly: true,
-      // local dev: "lax" is fine; cross-site HTTPS prod: "none" + secure:true
       sameSite: IS_PROD ? "none" : "lax",
       secure: IS_PROD,
       maxAge: 1000 * 60 * 60 * 24,
-      path: "/",
-    },
+      path: "/"
+    }
   })
 );
 
-/* ===================== Logger ===================== */
-app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
+// ---------- Health ----------
+app.get("/health", (_req, res) => res.json({ ok: true }));
 
-/* ===================== Static ===================== */
+// ---------- Parsers ----------
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// ---------- Static (optional; points to dist/public at runtime) ----------
 app.use(express.static(path.join(__dirname, "public")));
 
-/* Welcome */
-app.get("/", (_req: Request, res: Response) => {
-  res.send("Welcome to the Chat Application API");
-});
+// ---------- Welcome ----------
+app.get("/", (_req, res) => res.send("Welcome to the Chat Application API"));
 
-/* ===================== Routers ===================== */
-app.use("/session", sessionRouter);
-app.use("/chat", chatRouter);
+// ---------- Routers (make them all /api/*) ----------
+app.use("/api/session", sessionRouter);
+app.use("/api/chat", chatRouter);
 app.use("/api/auth", authRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/profile", profileRoutes);
 
-/* ===================== Start ===================== */
+// ---------- Start ----------
 connectToDb()
   .then(() => {
     const port = Number(process.env.PORT) || 5000;
     app.listen(port, () => {
-      console.log(`Server started on http://localhost:${port}`);
-      console.log("CORS: allowing all origins with credentials");
+      console.log(`Server started on :${port}`);
+      console.log(`CORS origin: ${process.env.CORS_ORIGIN}`);
     });
   })
   .catch((err) => {
     console.error("Failed to connect to DB:", err);
+    process.exit(1);
   });
 
 export default app;
