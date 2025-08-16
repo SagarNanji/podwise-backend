@@ -35,22 +35,20 @@ app.options(/^\/.*/, cors(corsOptions));   // <-- add this line (or /^\/api\/.*/
 
 
 // ---------- Session (single middleware) ----------
-app.use(
-  session({
-    name: "sid",
-    secret: process.env.SESSION_SECRET || "keyboard_cat",
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI! }),
-    cookie: {
-      httpOnly: true,
-      sameSite: IS_PROD ? "none" : "lax",
-      secure: IS_PROD,
-      maxAge: 1000 * 60 * 60 * 24,
-      path: "/"
-    }
-  })
-);
+app.use(session({
+  name: "sid",
+  secret: process.env.SESSION_SECRET || "keyboard_cat",
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI! }),
+  cookie: {
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure:   process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 24,
+    path: "/"
+  }
+}));
 
 // ---------- Health ----------
 app.get("/health", (_req, res) => res.json({ ok: true }));
