@@ -1,4 +1,4 @@
-import {getDb} from "../utils/db";
+import {getDb} from "../src/utils/db";
 import {ObjectId} from "mongodb";
 import {Session} from "../models/Session";
 import {Chat} from "../models/Chat";

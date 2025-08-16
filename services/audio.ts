@@ -1,7 +1,7 @@
 import { getAudioDurationInSeconds } from 'get-audio-duration';
 import { spawn } from 'child_process';
 import ffmpeg from 'ffmpeg-static';
-import { getDb } from '../utils/db';
+import { getDb } from '../src/utils/db';
 import { GridFSBucket, ObjectId } from 'mongodb';
 import fs from 'fs';
 import path from 'path';
