@@ -11,6 +11,7 @@ import cors from "cors";
 import session from "express-session";
 import { connectToDb } from "../utils/db";
 import path from "path";
+import MongoStore from "connect-mongo";
 
 configDotenv();
 
@@ -33,6 +34,21 @@ const corsAllWithCreds = cors({
 
 // Must go BEFORE session/routers:
 app.use(corsAllWithCreds);
+app.use(cors({
+  origin: process.env.CORS_ORIGIN, // e.g. https://your-frontend.vercel.app
+  credentials: true
+}));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET!,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI! }),
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+  }
+}));
 
 // Express 5: use a RegExp (NOT "*" or "(.*)")
 app.options(/.*/, corsAllWithCreds);
