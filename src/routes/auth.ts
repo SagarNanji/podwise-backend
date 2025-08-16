@@ -3,21 +3,17 @@ import bcrypt from "bcryptjs";
 import { getDb } from "../utils/db";
 import { User } from "../models/User";
 
-import { Request } from "express";
-
+// --- Session typing (add userId so TS knows about it) ---
 declare module "express-session" {
   interface SessionData {
-    user?: {
-      id: string;
-      email: string;
-      name: string;
-    };
+    user?: { id: string; email: string; name: string };
+    userId?: string; // <-- add this
   }
 }
 
 const router = Router();
 
-// Sign Up
+// POST /api/auth/signup
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -25,15 +21,13 @@ router.post("/signup", async (req, res) => {
     const users = db.collection<User>("users");
 
     const existingUser = await users.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ error: "Email already exists" });
+    if (existingUser) return res.status(400).json({ error: "Email already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUser: User = {
       name,
       email,
-      password: hashedPassword, // keep field name consistent: "password"
+      password: hashedPassword,
       createdAt: new Date().toISOString(),
     };
 
@@ -44,17 +38,13 @@ router.post("/signup", async (req, res) => {
         console.error("Session regenerate error:", err);
         return res.status(500).json({ error: "Session error" });
       }
-      req.session.user = {
-        id: result.insertedId.toString(),
-        email,
-        name,
-      };
+      // ✅ set session values AFTER regenerate
+      req.session.user = { id: result.insertedId.toString(), email, name };
+      req.session.userId = result.insertedId.toString();
+
       req.session.save((err2) => {
-        if (err2)
-          return res.status(500).json({ error: "Could not create session" });
-        res
-          .status(201)
-          .json({ message: "Signup successful", user: req.session.user });
+        if (err2) return res.status(500).json({ error: "Could not create session" });
+        res.status(201).json({ message: "Signup successful", user: req.session.user });
       });
     });
   } catch (error) {
@@ -63,7 +53,7 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// Sign In
+// POST /api/auth/signin
 router.post("/signin", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -75,22 +65,20 @@ router.post("/signin", async (req, res) => {
       return res.status(400).json({ error: "Invalid credentials" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
-    // ✅ persist login in the session
-  req.session.userId = String(user._id);
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(400).json({ error: "Invalid credentials" });
 
-    // Regenerate session, then persist user and save before responding
+    // ⚠️ Do NOT set anything before regenerate; it will be lost.
     req.session.regenerate((err) => {
       if (err) {
         console.error("Session regenerate error:", err);
         return res.status(500).json({ error: "Session error" });
       }
-      req.session.user = {
-        id: user._id?.toString() || "",
-        email: user.email ?? "",
-        name: user.name ?? "",
-      };
+      // ✅ set both shapes for compatibility
+      const id = user._id?.toString() || "";
+      req.session.user = { id, email: user.email ?? "", name: user.name ?? "" };
+      req.session.userId = id;
+
       req.session.save((err2) => {
         if (err2) {
           console.error("Session save error:", err2);
@@ -105,9 +93,9 @@ router.post("/signin", async (req, res) => {
   }
 });
 
-// Sign Out
+// POST /api/auth/signout
 router.post("/signout", (req, res) => {
-  req.session.destroy((err: any) => {
+  req.session.destroy((err) => {
     if (err) return res.status(500).json({ error: "Could not log out" });
     res.json({ message: "Signout successful" });
   });
