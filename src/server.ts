@@ -45,10 +45,12 @@ app.use(session({
     httpOnly: true,
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     secure:   process.env.NODE_ENV === "production",
+    partitioned: true,                 // 👈 add this
     maxAge: 1000 * 60 * 60 * 24,
     path: "/"
   }
 }));
+
 
 // ---------- Health ----------
 app.get("/health", (_req, res) => res.json({ ok: true }));
