@@ -31,7 +31,6 @@ const corsOptions: cors.CorsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"]
 };
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // preflight
 
 // ---------- Session (single middleware) ----------
 app.use(
@@ -78,7 +77,6 @@ connectToDb()
     const port = Number(process.env.PORT) || 5000;
     app.listen(port, () => {
       console.log(`Server started on :${port}`);
-      console.log(`CORS origin: ${process.env.CORS_ORIGIN}`);
     });
   })
   .catch((err) => {
